@@ -175,6 +175,16 @@ class TestUtils(unittest.TestCase):
         self.assertIn('%3Ca%261%3E', html)
         self.assertNotIn('<a&1>', html)
 
+    def test_dag_link_when_dag_is_none(self):
+        """Test that when there is no dag_id, dag_link does not contain hyperlink"""
+        from airflow.www.app import cached_app
+
+        with cached_app(testing=True).test_request_context():
+            html = str(utils.dag_link({}))
+
+        self.assertIn('None', html)
+        self.assertNotIn('<a href=', html)
+
     def test_dag_run_link(self):
         from airflow.www.app import cached_app
 
@@ -225,5 +235,22 @@ class TestWrappedMarkdown(unittest.TestCase):
         self.assertEqual(
             '''<div class="a_class" ><p><em>italic</em>
 <strong>bold</strong></p></div>''',
+            rendered,
+        )
+
+    def test_wrapped_markdown_with_table(self):
+        rendered = wrapped_markdown(
+            """| Job | Duration |
+               | ----------- | ----------- |
+               | ETL | 14m |"""
+        )
+
+        self.assertEqual(
+            (
+                '<div class="None" ><table>\n<thead>\n<tr>\n<th>Job</th>\n'
+                '<th>Duration</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>ETL'
+                '</td>\n<td>14m</td>\n</tr>\n</tbody>\n'
+                '</table></div>'
+            ),
             rendered,
         )
