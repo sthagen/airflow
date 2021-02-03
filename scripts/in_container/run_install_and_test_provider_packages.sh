@@ -24,7 +24,7 @@ function verify_parameters(){
     echo "Testing if all classes in import packages can be imported"
     echo
 
-    if [[ ${INSTALL_AIRFLOW_VERSION=""} == "" ]]; then
+    if [[ -z "${INSTALL_AIRFLOW_VERSION=""}" ]]; then
         echo
         echo "${COLOR_RED}ERROR: You have to specify airflow version to install.${COLOR_RESET}"
         echo
@@ -95,7 +95,7 @@ function discover_all_provider_packages() {
     # Columns is to force it wider, so it doesn't wrap at 80 characters
     COLUMNS=180 airflow providers list
 
-    local expected_number_of_providers=62
+    local expected_number_of_providers=63
     local actual_number_of_providers
     actual_providers=$(airflow providers list --output yaml | grep package_name)
     actual_number_of_providers=$(wc -l <<<"$actual_providers")

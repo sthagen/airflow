@@ -139,15 +139,27 @@ constraints files separately per major/minor python version.
 You can use them as constraint files when installing Airflow from PyPI. Note that you have to specify
 correct Airflow tag/version/branch and python versions in the URL.
 
+
 1. Installing just Airflow:
 
 NOTE!!!
 
 On November 2020, new version of PIP (20.3) has been released with a new, 2020 resolver. This resolver
-does not yet work with Apache Airflow and might lead to errors in installation - depends on your choice
-of extras. In order to install Airflow you need to either downgrade pip to version 20.2.4
-`pip install --upgrade pip==20.2.4` or, in case you use Pip 20.3, you need to add option
-`--use-deprecated legacy-resolver` to your pip install command.
+might work with Apache Airflow as of 20.3.3, but it might lead to errors in installation. It might
+depend on your choice of extras. In order to install Airflow reliably, you might need to either downgrade
+pip to version 20.2.4 `pip install --upgrade pip==20.2.4` or, in case you use Pip 20.3,
+you might need to add option] `--use-deprecated legacy-resolver` to your pip install command.
+While `pip 20.3.3` solved most of the `teething` problems of 20.3, this note will remain here until we
+set `pip 20.3` as official version in our CI pipeline where we are testing the installation as well.
+Due to those constraints, only `pip` installation is currently officially supported.
+
+While they are some successes with using other tools like [poetry](https://python-poetry.org) or
+[pip-tools](https://pypi.org/project/pip-tools), they do not share the same workflow as
+`pip` - especially when it comes to constraint vs. requirements management.
+Installing via `Poetry` or `pip-tools` is not currently supported.
+
+If you wish to install airflow using those tools you should use the constraint files and convert
+them to appropriate format and workflow that your tool requires.
 
 
 ```bash
@@ -187,7 +199,7 @@ who do not want to build the software themselves.
 Those are - in the order of most common ways people install Airflow:
 
 - [PyPI releases](https://pypi.org/project/apache-airflow/) to install Airflow using standard `pip` tool
-- [Docker Images](https://hub.docker.com/repository/docker/apache/airflow) to install airflow via
+- [Docker Images](https://hub.docker.com/r/apache/airflow) to install airflow via
   `docker` tool, use them in Kubernetes, Helm Charts, `docker-compose`, `docker swarm` etc. You can
   read more about using, customising, and extending the images in the
   [Latest docs](https://airflow.apache.org/docs/apache-airflow/stable/production-deployment.html), and

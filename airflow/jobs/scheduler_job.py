@@ -34,14 +34,14 @@ from multiprocessing.connection import Connection as MultiprocessingConnection
 from typing import Any, Callable, DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 from setproctitle import setproctitle
-from sqlalchemy import and_, func, not_, or_
+from sqlalchemy import and_, func, not_, or_, tuple_
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.session import Session, make_transient
 
 from airflow import models, settings
 from airflow.configuration import conf
-from airflow.exceptions import AirflowException, TaskNotFound
+from airflow.exceptions import AirflowException, SerializedDagNotFound, TaskNotFound
 from airflow.executors.executor_loader import UNPICKLEABLE_EXECUTORS
 from airflow.jobs.base_job import BaseJob
 from airflow.models import DAG, DagModel, SlaMiss, errors
@@ -590,7 +590,7 @@ class DagFileProcessor(LoggingMixin):
                 ti.state = simple_ti.state
                 ti.test_mode = self.UNIT_TEST_MODE
                 if request.is_failure_callback:
-                    ti.handle_failure(request.msg, ti.test_mode, ti.get_template_context())
+                    ti.handle_failure_with_callback(error=request.msg, test_mode=ti.test_mode)
                     self.log.info('Executed failure callback for %s in state %s', ti, ti.state)
 
     @provide_session
@@ -731,7 +731,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         self.max_tis_per_query: int = conf.getint('scheduler', 'max_tis_per_query')
         self.processor_agent: Optional[DagFileProcessorAgent] = None
 
-        self.dagbag = DagBag(dag_folder=self.subdir, read_dags_from_db=True)
+        self.dagbag = DagBag(dag_folder=self.subdir, read_dags_from_db=True, load_op_links=False)
 
     def register_signals(self) -> None:
         """Register signals that stop child processes"""
@@ -812,7 +812,9 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         # We need to do this for mysql as well because it can cause deadlocks
         # as discussed in https://issues.apache.org/jira/browse/AIRFLOW-2516
         if self.using_sqlite or self.using_mysql:
-            tis_to_change: List[TI] = with_row_locks(query, of=TI, **skip_locked(session=session)).all()
+            tis_to_change: List[TI] = with_row_locks(
+                query, of=TI, session=session, **skip_locked(session=session)
+            ).all()
             for ti in tis_to_change:
                 ti.set_state(new_state, session=session)
                 tis_changed += 1
@@ -922,6 +924,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         task_instances_to_examine: List[TI] = with_row_locks(
             query,
             of=TI,
+            session=session,
             **skip_locked(session=session),
         ).all()
         # TODO[HA]: This was wrong before anyway, as it only looked at a sub-set of dags, not everything.
@@ -1126,7 +1129,10 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         :type session: sqlalchemy.orm.Session
         :return: Number of task instance with state changed.
         """
-        max_tis = min(self.max_tis_per_query, self.executor.slots_available)
+        if self.max_tis_per_query == 0:
+            max_tis = self.executor.slots_available
+        else:
+            max_tis = min(self.max_tis_per_query, self.executor.slots_available)
         queued_tis = self._executable_task_instances_to_queued(max_tis, session=session)
 
         self._enqueue_task_instances_with_queued_state(queued_tis)
@@ -1156,7 +1162,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             for dag_id, task_id, execution_date, try_number in self.executor.queued_tasks.keys()
         ]
         ti_query = session.query(TI).filter(or_(*filter_for_ti_state_change))
-        tis_to_set_to_scheduled: List[TI] = with_row_locks(ti_query).all()
+        tis_to_set_to_scheduled: List[TI] = with_row_locks(ti_query, session=session).all()
         if not tis_to_set_to_scheduled:
             return
 
@@ -1509,7 +1515,17 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                 active_runs_by_dag_id[dag_id].add(execution_date)
 
             for dag_run in dag_runs:
-                self._schedule_dag_run(dag_run, active_runs_by_dag_id.get(dag_run.dag_id, set()), session)
+                # Use try_except to not stop the Scheduler when a Serialized DAG is not found
+                # This takes care of Dynamic DAGs especially
+                # SerializedDagNotFound should not happen here in the same loop because the DagRun would
+                # not be created in self._create_dag_runs if Serialized DAG does not exist
+                # But this would take care of the scenario when the Scheduler is restarted after DagRun is
+                # created and the DAG is deleted / renamed
+                try:
+                    self._schedule_dag_run(dag_run, active_runs_by_dag_id.get(dag_run.dag_id, set()), session)
+                except SerializedDagNotFound:
+                    self.log.exception("DAG '%s' not found in serialized_dag table", dag_run.dag_id)
+                    continue
 
             guard.commit()
 
@@ -1550,19 +1566,47 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         Unconditionally create a DAG run for the given DAG, and update the dag_model's fields to control
         if/when the next DAGRun should be created
         """
-        for dag_model in dag_models:
-            dag = self.dagbag.get_dag(dag_model.dag_id, session=session)
-            dag_hash = self.dagbag.dags_hash.get(dag.dag_id)
-            dag.create_dagrun(
-                run_type=DagRunType.SCHEDULED,
-                execution_date=dag_model.next_dagrun,
-                start_date=timezone.utcnow(),
-                state=State.RUNNING,
-                external_trigger=False,
-                session=session,
-                dag_hash=dag_hash,
-                creating_job_id=self.id,
+        # Bulk Fetch DagRuns with dag_id and execution_date same
+        # as DagModel.dag_id and DagModel.next_dagrun
+        # This list is used to verify if the DagRun already exist so that we don't attempt to create
+        # duplicate dag runs
+        active_dagruns = (
+            session.query(DagRun.dag_id, DagRun.execution_date)
+            .filter(
+                tuple_(DagRun.dag_id, DagRun.execution_date).in_(
+                    [(dm.dag_id, dm.next_dagrun) for dm in dag_models]
+                )
             )
+            .all()
+        )
+
+        for dag_model in dag_models:
+            try:
+                dag = self.dagbag.get_dag(dag_model.dag_id, session=session)
+            except SerializedDagNotFound:
+                self.log.exception("DAG '%s' not found in serialized_dag table", dag_model.dag_id)
+                continue
+
+            dag_hash = self.dagbag.dags_hash.get(dag.dag_id)
+            # Explicitly check if the DagRun already exists. This is an edge case
+            # where a Dag Run is created but `DagModel.next_dagrun` and `DagModel.next_dagrun_create_after`
+            # are not updated.
+            # We opted to check DagRun existence instead
+            # of catching an Integrity error and rolling back the session i.e
+            # we need to run self._update_dag_next_dagruns if the Dag Run already exists or if we
+            # create a new one. This is so that in the next Scheduling loop we try to create new runs
+            # instead of falling in a loop of Integrity Error.
+            if (dag.dag_id, dag_model.next_dagrun) not in active_dagruns:
+                dag.create_dagrun(
+                    run_type=DagRunType.SCHEDULED,
+                    execution_date=dag_model.next_dagrun,
+                    start_date=timezone.utcnow(),
+                    state=State.RUNNING,
+                    external_trigger=False,
+                    session=session,
+                    dag_hash=dag_hash,
+                    creating_job_id=self.id,
+                )
 
         self._update_dag_next_dagruns(dag_models, session)
 
@@ -1589,7 +1633,13 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         )
 
         for dag_model in dag_models:
-            dag = self.dagbag.get_dag(dag_model.dag_id, session=session)
+            # Get the DAG in a try_except to not stop the Scheduler when a Serialized DAG is not found
+            # This takes care of Dynamic DAGs especially
+            try:
+                dag = self.dagbag.get_dag(dag_model.dag_id, session=session)
+            except SerializedDagNotFound:
+                self.log.exception("DAG '%s' not found in serialized_dag table", dag_model.dag_id)
+                continue
             active_runs_of_dag = active_runs_of_dags.get(dag.dag_id, 0)
             if dag.max_active_runs and active_runs_of_dag >= dag.max_active_runs:
                 self.log.info(
@@ -1729,8 +1779,8 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         pools = models.Pool.slots_stats(session=session)
         for pool_name, slot_stats in pools.items():
             Stats.gauge(f'pool.open_slots.{pool_name}', slot_stats["open"])
-            Stats.gauge(f'pool.queued_slots.{pool_name}', slot_stats[State.QUEUED])
-            Stats.gauge(f'pool.running_slots.{pool_name}', slot_stats[State.RUNNING])
+            Stats.gauge(f'pool.queued_slots.{pool_name}', slot_stats[State.QUEUED])  # type: ignore
+            Stats.gauge(f'pool.running_slots.{pool_name}', slot_stats[State.RUNNING])  # type: ignore
 
     @provide_session
     def heartbeat_callback(self, session: Session = None) -> None:
@@ -1781,7 +1831,9 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         )
 
         # Lock these rows, so that another scheduler can't try and adopt these too
-        tis_to_reset_or_adopt = with_row_locks(query, of=TI, **skip_locked(session=session)).all()
+        tis_to_reset_or_adopt = with_row_locks(
+            query, of=TI, session=session, **skip_locked(session=session)
+        ).all()
         to_reset = self.executor.try_adopt_task_instances(tis_to_reset_or_adopt)
 
         reset_tis_message = []
