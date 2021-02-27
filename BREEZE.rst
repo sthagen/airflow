@@ -36,6 +36,8 @@ We called it *Airflow Breeze* as **It's a Breeze to contribute to Airflow**.
 The advantages and disadvantages of using the Breeze environment vs. other ways of testing Airflow
 are described in `CONTRIBUTING.rst <CONTRIBUTING.rst#integration-test-development-environment>`_.
 
+All the output from the last ./breeze command is automatically logged to the ``logs/breeze.out`` file.
+
 Watch the video below about Airflow Breeze. It explains the motivation for Breeze
 and screencasts all its uses.
 
@@ -1500,6 +1502,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
 
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
+
 
   ####################################################################################################
 
@@ -1535,6 +1541,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
 
   ####################################################################################################
@@ -1598,6 +1608,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
 
   ####################################################################################################
@@ -1682,6 +1696,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
 
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
+
 
   ####################################################################################################
 
@@ -1750,6 +1768,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
 
   ####################################################################################################
@@ -1908,6 +1930,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
 
   ####################################################################################################
@@ -2147,6 +2173,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
 
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
+
 
   ####################################################################################################
 
@@ -2219,6 +2249,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
 
   ####################################################################################################
@@ -2729,6 +2763,10 @@ This is the current syntax for  `./breeze <./breeze>`_:
 
           Note that you can further increase verbosity and see all the commands executed by breeze
           by running 'export VERBOSE_COMMANDS="true"' before running breeze.
+
+  --dry-run-docker
+          Only show docker commands to execute instead of actually executing them. The docker
+          commands are printed in yellow color.
 
   ****************************************************************************************************
    Print detailed help message

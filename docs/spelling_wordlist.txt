@@ -1063,6 +1063,7 @@ png
 podName
 podSpec
 podspec
+poller
 polyfill
 postMessage
 postfix
@@ -1283,6 +1284,7 @@ sync'ed
 sys
 syspath
 systemd
+tableau
 tableauserverclient
 tablefmt
 tableId
