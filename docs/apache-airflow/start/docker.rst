@@ -48,7 +48,7 @@ This file contains several service definitions:
 - ``airflow-webserver`` - The webserver available at ``http://localhost:8080``.
 - ``airflow-worker`` - The worker that executes the tasks given by the scheduler.
 - ``airflow-init`` - The initialization service.
-- ``flower`` - `The flower app <https://flower.readthedocs.io/en/latest/>`__ for monitoring the environment. It is available at ``http://localhost:8080``.
+- ``flower`` - `The flower app <https://flower.readthedocs.io/en/latest/>`__ for monitoring the environment. It is available at ``http://localhost:5555``.
 - ``postgres`` - The database.
 - ``redis`` - `The redis <https://redis.io/>`__ - broker that forwards messages from scheduler to worker.
 
@@ -104,8 +104,8 @@ In the second terminal you can check the condition of the containers and make su
 
     $ docker ps
     CONTAINER ID   IMAGE                             COMMAND                  CREATED          STATUS                    PORTS                              NAMES
-    247ebe6cf87a   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes              8080/tcp                           compose_airflow-worker_1
-    ed9b09fc84b1   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes              8080/tcp                           compose_airflow-scheduler_1
+    247ebe6cf87a   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes (healthy)    8080/tcp                           compose_airflow-worker_1
+    ed9b09fc84b1   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes (healthy)    8080/tcp                           compose_airflow-scheduler_1
     65ac1da2c219   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes (healthy)    0.0.0.0:5555->5555/tcp, 8080/tcp   compose_flower_1
     7cb1fb603a98   apache/airflow:master-python3.8   "/usr/bin/dumb-init …"   3 minutes ago    Up 3 minutes (healthy)    0.0.0.0:8080->8080/tcp             compose_airflow-webserver_1
     74f3bbe506eb   postgres:13                       "docker-entrypoint.s…"   18 minutes ago   Up 17 minutes (healthy)   5432/tcp                           compose_postgres_1

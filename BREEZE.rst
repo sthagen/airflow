@@ -333,7 +333,7 @@ Managing CI environment:
     * Generate constraints with ``breeze generate-constraints``
     * Execute arbitrary command in the test environment with ``breeze shell`` command
     * Execute arbitrary docker-compose command with ``breeze docker-compose`` command
-    * Push docker images with ``breeze push-image`` command (require committer's rights to push images)
+    * Push docker images with ``breeze push-image`` command (require committers rights to push images)
 
 You can optionally reset the Airflow metada database if specified as extra ``--db-reset`` flag and for CI image
 you can also start integrations (separate Docker images) if specified as extra ``--integration`` flags. You can also
@@ -356,7 +356,7 @@ Managing Prod environment (with ``--production-image`` flag):
     * Restart running interactive environment with ``breeze restart`` command
     * Execute arbitrary command in the test environment with ``breeze shell`` command
     * Execute arbitrary docker-compose command with ``breeze docker-compose`` command
-    * Push docker images with ``breeze push-image`` command (require committer's rights to push images)
+    * Push docker images with ``breeze push-image`` command (require committers rights to push images)
 
 You can optionally reset database if specified as extra ``--db-reset`` flag. You can also
 chose which backend database should be used with ``--backend`` flag and python version with ``--python`` flag.
@@ -1467,7 +1467,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
           and you need to be committer to push to Apache Airflow' GitHub registry.
 
   --github-registry GITHUB_REGISTRY
-          Github registry used. GitHub has legacy Packages registry and Public Beta Container
+          GitHub registry used. GitHub has legacy Packages registry and Public Beta Container
           registry.
 
           Default: docker.pkg.github.com.
@@ -1661,7 +1661,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
           and you need to be committer to push to Apache Airflow' GitHub registry.
 
   --github-registry GITHUB_REGISTRY
-          Github registry used. GitHub has legacy Packages registry and Public Beta Container
+          GitHub registry used. GitHub has legacy Packages registry and Public Beta Container
           registry.
 
           Default: docker.pkg.github.com.
@@ -2279,10 +2279,11 @@ This is the current syntax for  `./breeze <./breeze>`_:
                  pre-commit-hook-names provide-create-sessions providers-init-file provider-yamls
                  pydevd pydocstyle pylint pylint-tests python-no-log-warn pyupgrade
                  restrict-start_date rst-backticks setup-order setup-extra-packages shellcheck
-                 sort-in-the-wild stylelint trailing-whitespace update-breeze-file update-extras
-                 update-local-yml-file update-setup-cfg-file version-sync yamllint
+                 sort-in-the-wild sort-spelling-wordlist stylelint trailing-whitespace
+                 update-breeze-file update-extras update-local-yml-file update-setup-cfg-file
+                 version-sync yamllint
 
-        You can pass extra arguments including options to to the pre-commit framework as
+        You can pass extra arguments including options to the pre-commit framework as
         <EXTRA_ARGS> passed after --. For example:
 
         'breeze static-check mypy' or
@@ -2705,7 +2706,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
           and you need to be committer to push to Apache Airflow' GitHub registry.
 
   --github-registry GITHUB_REGISTRY
-          Github registry used. GitHub has legacy Packages registry and Public Beta Container
+          GitHub registry used. GitHub has legacy Packages registry and Public Beta Container
           registry.
 
           Default: docker.pkg.github.com.

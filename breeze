@@ -24,8 +24,11 @@ AIRFLOW_SOURCES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ ${BREEZE_REDIRECT=} == "" ]]; then
     mkdir -p "${AIRFLOW_SOURCES}"/logs
     export BREEZE_REDIRECT="true"
-    "${0}" "${@}" 2>&1 | tee "${AIRFLOW_SOURCES}"/logs/breeze.out
-    exit
+    if [[ "$(uname)" == "Darwin" ]]; then
+      exec script -q "${AIRFLOW_SOURCES}"/logs/breeze.out "$BASH" -c "$(printf "%q " "${0}" "${@}")"
+    else
+      exec script --return --quiet "${AIRFLOW_SOURCES}"/logs/breeze.out -c "$(printf "%q " "${0}" "${@}")"
+    fi
 fi
 
 export AIRFLOW_SOURCES
@@ -479,7 +482,7 @@ EOF
 
                                Branch name:            ${BRANCH_NAME}
                                Docker image:           ${AIRFLOW_PROD_IMAGE}
-                               Github cache prefix:    ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
+                               GitHub cache prefix:    ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
                                Airflow source version: $(build_images::get_airflow_version_from_production_image)
 EOF
         else
@@ -489,7 +492,7 @@ EOF
 
                                Branch name:            ${BRANCH_NAME}
                                Docker image:           ${AIRFLOW_CI_IMAGE}
-                               Github cache prefix:    ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
+                               GitHub cache prefix:    ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
                                Airflow source version: ${AIRFLOW_VERSION}
 EOF
         fi
@@ -514,7 +517,7 @@ EOF
 
    Branch name:             ${BRANCH_NAME}
    Docker image:            ${AIRFLOW_PROD_IMAGE}
-   Github cache prefix:     ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
+   GitHub cache prefix:     ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
 EOF
         else
             cat <<EOF
@@ -523,7 +526,7 @@ EOF
 
    Branch name:             ${BRANCH_NAME}
    Docker image:            ${AIRFLOW_CI_IMAGE}
-   Github cache prefix:     ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
+   GitHub cache prefix:     ${GITHUB_REGISTRY}/$(get_github_container_registry_image_prefix)
 
 EOF
         fi
@@ -1024,7 +1027,7 @@ function breeze::parse_arguments() {
             echo "Additional apt dev dependencies: ${ADDITIONAL_DEV_APT_DEPS}"
             shift 2
             ;;
-        --dev-apt-commad)
+        --dev-apt-command)
             export DEV_APT_COMMAND="${2}"
             echo "Apt dev command: ${DEV_APT_COMMAND}"
             shift 2
@@ -1049,7 +1052,7 @@ function breeze::parse_arguments() {
             echo "Additional apt runtime dependencies: ${ADDITIONAL_RUNTIME_APT_DEPS}"
             shift 2
             ;;
-        --runtime-apt-commad)
+        --runtime-apt-command)
             export RUNTIME_APT_COMMAND="${2}"
             echo "Apt runtime command: ${RUNTIME_APT_COMMAND}"
             shift 2
@@ -2009,7 +2012,7 @@ ${CMDNAME} static-check [FLAGS] static_check [-- <EXTRA_ARGS>]
 
 ${FORMATTED_STATIC_CHECKS}
 
-      You can pass extra arguments including options to to the pre-commit framework as
+      You can pass extra arguments including options to the pre-commit framework as
       <EXTRA_ARGS> passed after --. For example:
 
       '${CMDNAME} static-check mypy' or
@@ -2726,7 +2729,7 @@ function breeze::flag_pull_push_docker_images() {
         and you need to be committer to push to Apache Airflow' GitHub registry.
 
 --github-registry GITHUB_REGISTRY
-        Github registry used. GitHub has legacy Packages registry and Public Beta Container
+        GitHub registry used. GitHub has legacy Packages registry and Public Beta Container
         registry.
 
         Default: ${_breeze_default_github_registry:=}.

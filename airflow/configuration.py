@@ -97,7 +97,7 @@ def default_config_yaml() -> dict:
 
     :return: Python dictionary containing configs & their info
     """
-    import yaml
+    import airflow.utils.yaml as yaml
 
     with open(_default_config_file_path('config.yml')) as config_file:
         return yaml.safe_load(config_file)
@@ -635,6 +635,9 @@ class AirflowConfigParser(ConfigParser):  # pylint: disable=too-many-ancestors
                 _, section, key = env_var.split('__', 2)
                 opt = self._get_env_var_option(section, key)
             except ValueError:
+                continue
+            if opt is None:
+                log.warning("Ignoring unknown env var '%s'", env_var)
                 continue
             if not display_sensitive and env_var != self._env_var_name('core', 'unit_test_mode'):
                 opt = '< hidden >'

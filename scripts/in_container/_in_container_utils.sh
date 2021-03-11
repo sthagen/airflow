@@ -19,6 +19,7 @@
 # Can be used to add extra parameters when generating providers
 # We will be able to remove it after we drop backport providers
 OPTIONAL_BACKPORT_FLAG=()
+OPTIONAL_VERBOSE_FLAG=()
 PROVIDER_PACKAGES_DIR="${AIRFLOW_SOURCES}/dev/provider_packages"
 
 #######################################################################################################
@@ -401,6 +402,9 @@ function setup_provider_packages() {
         export PACKAGE_PREFIX_LOWERCASE=""
         export PACKAGE_PREFIX_HYPHEN=""
     fi
+    if [[ ${VERBOSE} == "true" ]]; then
+        OPTIONAL_VERBOSE_FLAG+=("--verbose")
+    fi
     readonly PACKAGE_TYPE
     readonly PACKAGE_PREFIX_UPPERCASE
     readonly PACKAGE_PREFIX_LOWERCASE
@@ -633,7 +637,7 @@ function get_providers_to_act_on() {
     group_end
 }
 
-# Starts group for Github Actions - makes logs much more readable
+# Starts group for GitHub Actions - makes logs much more readable
 function group_start {
     if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
         echo "::group::${1}"
@@ -644,7 +648,7 @@ function group_start {
     fi
 }
 
-# Ends group for Github Actions
+# Ends group for GitHub Actions
 function group_end {
     if [[ ${GITHUB_ACTIONS=} == "true" ]]; then
         echo -e "\033[0m"  # Disable any colors set in the group

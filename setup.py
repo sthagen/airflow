@@ -217,7 +217,7 @@ azure = [
     'azure-keyvault>=4.1.0',
     'azure-kusto-data>=0.0.43,<0.1',
     'azure-mgmt-containerinstance>=1.5.0,<2.0',
-    'azure-mgmt-datafactory>=0.13.0',
+    'azure-mgmt-datafactory>=1.0.0,<2.0',
     'azure-mgmt-datalake-store>=0.5.0',
     'azure-mgmt-resource>=2.2.0',
     'azure-storage-blob>=12.7.0',
@@ -315,6 +315,7 @@ google = [
     'grpcio-gcp>=0.2.2',
     'json-merge-patch~=0.2',
     'pandas-gbq',
+    'plyvel',
 ]
 grpc = [
     'google-auth>=1.0.0, <2.0.0dev',
@@ -427,10 +428,7 @@ slack = [
     'slack_sdk>=3.0.0,<4.0.0',
 ]
 snowflake = [
-    # Snowflake connector > 2.3.8 is needed because it has vendored-in, patched urllib and requests libraries
-    # In earlier versions of the snowflake library, monkey-patching the libraries caused other
-    # providers to fail (Google, Amazon etc.)
-    'snowflake-connector-python>=2.3.8',
+    'snowflake-connector-python>=2.4.1',
     'snowflake-sqlalchemy>=1.1.0',
 ]
 spark = [
@@ -518,6 +516,7 @@ devel_hadoop = devel_minreq + hdfs + hive + kerberos + presto + webhdfs
 
 # Dict of all providers which are part of the Apache Airflow repository together with their requirements
 PROVIDERS_REQUIREMENTS: Dict[str, List[str]] = {
+    'airbyte': [],
     'amazon': amazon,
     'apache.beam': apache_beam,
     'apache.cassandra': cassandra,
@@ -658,7 +657,6 @@ EXTRAS_DEPRECATED_ALIASES: Dict[str, str] = {
     'qds': 'qubole',
     's3': 'amazon',
     'spark': 'apache.spark',
-    'tableau': 'salesforce',
     'webhdfs': 'apache.webhdfs',
     'winrm': 'microsoft.winrm',
 }

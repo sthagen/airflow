@@ -32,7 +32,7 @@ from datetime import datetime as dt, timedelta
 from typing import Any, Dict, Generator, List, NamedTuple
 from unittest import mock
 from unittest.mock import PropertyMock
-from urllib.parse import quote_plus
+from urllib.parse import parse_qsl, quote_plus
 
 import jinja2
 import pytest
@@ -360,6 +360,12 @@ class TestPluginView(TestBase):
         self.check_content_in_response("Airflow Plugins", resp)
         self.check_content_in_response("source", resp)
         self.check_content_in_response("<em>test-entrypoint-testpluginview==1.0.0:</em> <Mock id=", resp)
+
+    def test_endpoint_should_not_be_unauthenticated(self):
+        self.logout()
+        resp = self.client.get('/plugin', follow_redirects=True)
+        self.check_content_not_in_response("test_plugin", resp)
+        self.check_content_in_response("Sign In - Airflow", resp)
 
 
 class TestPoolModelView(TestBase):
@@ -2781,6 +2787,13 @@ class TestTriggerDag(TestBase):
     def test_trigger_dag_form_origin_url(self, test_origin, expected_origin):
         test_dag_id = "example_bash_operator"
 
+        # https://github.com/python/cpython/pull/24297/files
+        # Check if tests are running with a Python version containing the above fix
+        # where ";" is removed as a separator
+        if parse_qsl(";a=b") != [(';a', 'b')] and ";" in test_origin:
+            expected_origin = expected_origin.replace("%3B", "&")
+            expected_origin += "="
+
         resp = self.client.get(f'trigger?dag_id={test_dag_id}&origin={test_origin}')
         self.check_content_in_response(
             '<button type="button" class="btn" onclick="location.href = \'{}\'; return false">'.format(
@@ -3325,6 +3338,13 @@ class TestHelperFunctions(TestBase):
     )
     @mock.patch("airflow.www.views.url_for")
     def test_get_safe_url(self, test_url, expected_url, mock_url_for):
+        # https://github.com/python/cpython/pull/24297/files
+        # Check if tests are running with a Python version containing the above fix
+        # where ";" is removed as a separator
+        if parse_qsl(";a=b") != [(';a', 'b')] and ";" in test_url:
+            expected_url = expected_url.replace("%3B", "&")
+            expected_url += "="
+
         mock_url_for.return_value = "/home"
         with self.app.test_request_context(base_url="http://localhost:8080"):
             assert get_safe_url(test_url) == expected_url
