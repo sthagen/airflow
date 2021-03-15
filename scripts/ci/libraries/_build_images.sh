@@ -124,7 +124,7 @@ function build_images::forget_last_answer() {
 function build_images::confirm_via_terminal() {
     echo >"${DETECTED_TERMINAL}"
     echo >"${DETECTED_TERMINAL}"
-    echo "${COLOR_YELLOW}WARNING:Make sure that you rebased to latest master before rebuilding!${COLOR_RESET}" >"${DETECTED_TERMINAL}"
+    echo "${COLOR_YELLOW}WARNING:Make sure that you rebased to latest upstream before rebuilding!${COLOR_RESET}" >"${DETECTED_TERMINAL}"
     echo >"${DETECTED_TERMINAL}"
     # Make sure to use output of tty rather than stdin/stdout when available - this way confirm
     # will works also in case of pre-commits (git does not pass stdin/stdout to pre-commit hooks)
@@ -175,7 +175,7 @@ function build_images::confirm_image_rebuild() {
     elif [[ -t 0 ]]; then
         echo
         echo
-        echo "${COLOR_YELLOW}WARNING:Make sure that you rebased to latest master before rebuilding!${COLOR_RESET}"
+        echo "${COLOR_YELLOW}WARNING:Make sure that you rebased to latest upstream before rebuilding!${COLOR_RESET}"
         echo
         # Check if this script is run interactively with stdin open and terminal attached
         "${AIRFLOW_SOURCES}/confirm" "${ACTION} image ${THE_IMAGE_TYPE}-python${PYTHON_MAJOR_MINOR_VERSION}"
@@ -998,11 +998,18 @@ function build_images::wait_for_image_tag() {
     start_end::group_start "Wait for image tag ${IMAGE_TO_WAIT_FOR}"
     while true; do
         set +e
-        docker pull "${IMAGE_TO_WAIT_FOR}" 2>/dev/null >/dev/null
+        echo "${COLOR_BLUE}Docker pull ${IMAGE_TO_WAIT_FOR} ${COLOR_RESET}" >"${OUTPUT_LOG}"
+        docker pull "${IMAGE_TO_WAIT_FOR}" >>"${OUTPUT_LOG}" 2>&1
         set -e
-        if [[ -z "$(docker images -q "${IMAGE_TO_WAIT_FOR}" 2>/dev/null || true)" ]]; then
+        local image_hash
+        echo "${COLOR_BLUE} Docker images -q ${IMAGE_TO_WAIT_FOR}${COLOR_RESET}" >>"${OUTPUT_LOG}"
+        image_hash="$(docker images -q "${IMAGE_TO_WAIT_FOR}" 2>>"${OUTPUT_LOG}" || true)"
+        if [[ -z "${image_hash}" ]]; then
             echo
-            echo "The image ${IMAGE_TO_WAIT_FOR} is not yet available. Waiting"
+            echo "The image ${IMAGE_TO_WAIT_FOR} is not yet available. No local hash for the image. Waiting."
+            echo
+            echo "Last log:"
+            cat "${OUTPUT_LOG}" || true
             echo
             sleep 10
         else
