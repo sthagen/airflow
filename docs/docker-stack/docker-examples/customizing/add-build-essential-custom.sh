@@ -15,17 +15,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# shellcheck source=scripts/ci/libraries/_script_init.sh
-. "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
 
-push_pull_remove_images::check_if_github_registry_wait_for_image_enabled
+# This is an example docker build script. It is not intended for PRODUCTION use
+set -euo pipefail
+AIRFLOW_SOURCES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../" && pwd)"
+cd "${AIRFLOW_SOURCES}"
 
-build_image::configure_docker_registry
-
-export AIRFLOW_PROD_IMAGE_NAME="${BRANCH_NAME}-python${PYTHON_MAJOR_MINOR_VERSION}"
-start_end::group_start "Waiting for ${AIRFLOW_PROD_IMAGE_NAME} image to appear"
-
-push_pull_remove_images::wait_for_github_registry_image \
-    "${AIRFLOW_PROD_IMAGE_NAME}${GITHUB_REGISTRY_IMAGE_SUFFIX}" "${GITHUB_REGISTRY_PULL_IMAGE_TAG}"
-
-start_end::group_end
+# [START build]
+docker build . \
+    --build-arg PYTHON_BASE_IMAGE="python:3.6-slim-buster" \
+    --build-arg AIRFLOW_VERSION="2.0.1" \
+    --build-arg ADDITIONAL_PYTHON_DEPS="mpi4py" \
+    --build-arg ADDITIONAL_DEV_APT_DEPS="libopenmpi-dev" \
+    --build-arg ADDITIONAL_RUNTIME_APT_DEPS="openmpi-common" \
+    --tag "$(basename "$0")"
+# [END build]
+docker rmi --force "$(basename "$0")"

@@ -15,12 +15,36 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-echo
-echo "Waiting for all CI images to appear: ${CURRENT_PYTHON_MAJOR_MINOR_VERSIONS_AS_STRING}"
-echo
+# shellcheck source=scripts/ci/libraries/_initialization.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../libraries/_initialization.sh"
 
-for PYTHON_MAJOR_MINOR_VERSION in ${CURRENT_PYTHON_MAJOR_MINOR_VERSIONS_AS_STRING}
-do
-    export PYTHON_MAJOR_MINOR_VERSION
-    "$( dirname "${BASH_SOURCE[0]}" )/ci_wait_for_ci_image.sh"
-done
+initialization::set_output_color_variables
+
+job_name=$1
+file=$2
+
+set +e
+
+if [[ ${file} == *".sh" ]]; then
+    "${file}"
+    res=$?
+elif [[ ${file} == *"Dockerfile" ]]; then
+    cd "$(dirname "${file}")" || exit 1
+    docker build . --tag "${job_name}"
+    res=$?
+    docker rmi --force "${job_name}"
+else
+    echo "Bad file ${file}. Should be either a Dockerfile or script"
+    exit 1
+fi
+# Print status to status file
+echo "${res}" >"${PARALLEL_JOB_STATUS}"
+
+echo
+# print status to log
+if [[ ${res} == "0" ]]; then
+    echo "${COLOR_GREEN}Extend PROD image test ${job_name} succeeded${COLOR_RESET}"
+else
+    echo "${COLOR_RED}Extend PROD image test ${job_name} failed${COLOR_RESET}"
+fi
+echo

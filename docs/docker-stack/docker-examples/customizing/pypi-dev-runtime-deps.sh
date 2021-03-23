@@ -15,21 +15,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# shellcheck source=scripts/ci/libraries/_script_init.sh
-. "$(dirname "${BASH_SOURCE[0]}")/../libraries/_script_init.sh"
 
-function pull_ci_image() {
-    local image_name_with_tag="${GITHUB_REGISTRY_AIRFLOW_CI_IMAGE}:${GITHUB_REGISTRY_PULL_IMAGE_TAG}"
-    start_end::group_start "Pulling ${image_name_with_tag} image"
+# This is an example docker build script. It is not intended for PRODUCTION use
+set -euo pipefail
+AIRFLOW_SOURCES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../" && pwd)"
+cd "${AIRFLOW_SOURCES}"
 
-    push_pull_remove_images::pull_image_github_dockerhub "${AIRFLOW_CI_IMAGE}" "${image_name_with_tag}"
-    start_end::group_end
-
-}
-
-
-build_images::prepare_ci_build
-
-pull_ci_image
-
-verify_image::verify_ci_image "${AIRFLOW_CI_IMAGE}"
+# [START build]
+docker build . \
+    --build-arg PYTHON_BASE_IMAGE="python:3.6-slim-buster" \
+    --build-arg AIRFLOW_VERSION="2.0.1" \
+    --build-arg ADDITIONAL_AIRFLOW_EXTRAS="jdbc" \
+    --build-arg ADDITIONAL_PYTHON_DEPS="pandas" \
+    --build-arg ADDITIONAL_DEV_APT_DEPS="gcc g++" \
+    --build-arg ADDITIONAL_RUNTIME_APT_DEPS="default-jre-headless" \
+    --tag "$(basename "$0")"
+# [END build]
+docker rmi --force "$(basename "$0")"

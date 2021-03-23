@@ -16,31 +16,39 @@
 # specific language governing permissions and limitations
 # under the License.
 
-function docker_engine::get_available_memory_in_docker() {
-    MEMORY_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash \
-        "${AIRFLOW_CI_IMAGE}" -c \
+
+function docker_engine_resources::print_overall_stats() {
+    echo
+    echo "Overall resource statistics"
+    echo
+    docker stats --all --no-stream --no-trunc
+    docker run --rm --entrypoint /bin/bash "${AIRFLOW_CI_IMAGE}" -c "free -h"
+    df --human || true
+}
+
+
+function docker_engine_resources::get_available_memory_in_docker() {
+    MEMORY_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash debian:buster-slim -c \
         'echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024)))')
     echo "${COLOR_BLUE}Memory available for Docker${COLOR_RESET}: $(numfmt --to iec $((MEMORY_AVAILABLE_FOR_DOCKER * 1024 * 1024)))"
     export MEMORY_AVAILABLE_FOR_DOCKER
 }
 
-function docker_engine::get_available_cpus_in_docker() {
-    CPUS_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash \
-        "${AIRFLOW_CI_IMAGE}" -c \
+function docker_engine_resources::get_available_cpus_in_docker() {
+    CPUS_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash debian:buster-slim -c \
         'grep -cE "cpu[0-9]+" </proc/stat')
     echo "${COLOR_BLUE}CPUS available for Docker${COLOR_RESET}: ${CPUS_AVAILABLE_FOR_DOCKER}"
     export CPUS_AVAILABLE_FOR_DOCKER
 }
 
-function docker_engine::get_available_disk_space_in_docker() {
-    DISK_SPACE_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash \
-        "${AIRFLOW_CI_IMAGE}" -c \
+function docker_engine_resources::get_available_disk_space_in_docker() {
+    DISK_SPACE_AVAILABLE_FOR_DOCKER=$(docker run --rm --entrypoint /bin/bash debian:buster-slim -c \
         'df  / | tail -1 | awk '\''{print $4}'\')
     echo "${COLOR_BLUE}Disk space available for Docker${COLOR_RESET}: $(numfmt --to iec $((DISK_SPACE_AVAILABLE_FOR_DOCKER * 1024)))"
     export DISK_SPACE_AVAILABLE_FOR_DOCKER
 }
 
-function docker_engine::check_enough_resources() {
+function docker_engine_resources::check_enough_resources() {
     local successful_resource_check="true"
     if (( MEMORY_AVAILABLE_FOR_DOCKER < 4000 )) ; then
         successful_resource_check="false"
@@ -67,9 +75,9 @@ function docker_engine::check_enough_resources() {
     fi
 }
 
-function docker_engine::check_all_resources() {
-    docker_engine::get_available_memory_in_docker
-    docker_engine::get_available_cpus_in_docker
-    docker_engine::get_available_disk_space_in_docker
-    docker_engine::check_enough_resources
+function docker_engine_resources::check_all_resources() {
+    docker_engine_resources::get_available_memory_in_docker
+    docker_engine_resources::get_available_cpus_in_docker
+    docker_engine_resources::get_available_disk_space_in_docker
+    docker_engine_resources::check_enough_resources
 }

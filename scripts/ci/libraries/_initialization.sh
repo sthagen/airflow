@@ -193,6 +193,7 @@ function initialization::initialize_files_for_rebuild_check() {
         "Dockerfile.ci"
         ".dockerignore"
         "scripts/docker/compile_www_assets.sh"
+        "scripts/docker/common.sh"
         "scripts/docker/install_additional_dependencies.sh"
         "scripts/docker/install_airflow.sh"
         "scripts/docker/install_airflow_from_branch_tip.sh"
@@ -529,7 +530,10 @@ function initialization::initialize_github_variables() {
 }
 
 function initialization::initialize_test_variables() {
-    export TEST_TYPE=${TEST_TYPE:=""}
+
+    # In case we want to force certain test type to run, this variable should be set to this type
+    # Otherwise TEST_TYPEs to run will be derived from TEST_TYPES space-separated string
+    export FORCE_TEST_TYPE=${FORCE_TEST_TYPE:=""}
 }
 
 function initialization::initialize_package_variables() {
@@ -745,10 +749,6 @@ function initialization::get_environment_for_builds_on_ci() {
 function initialization::make_constants_read_only() {
     # Set the arguments as read-only
     readonly PYTHON_MAJOR_MINOR_VERSION
-
-    readonly WEBSERVER_HOST_PORT
-    readonly POSTGRES_HOST_PORT
-    readonly MYSQL_HOST_PORT
 
     readonly HOST_USER_ID
     readonly HOST_GROUP_ID
