@@ -18,15 +18,31 @@
  */
 
 import React from 'react';
-import { Center, Heading } from '@chakra-ui/react';
-import AppHeader from 'components/AppHeader';
+import { Link } from 'react-router-dom';
+import { Button } from '@chakra-ui/react';
 
-const Pipelines: React.FC = () => (
-  <AppHeader>
-    <Center height="100%" width="100%">
-      <Heading>Pipelines</Heading>
-    </Center>
-  </AppHeader>
-);
+interface Props {
+  item: {
+    label: string;
+    path: string;
+  };
+  currentView: string;
+}
 
-export default Pipelines;
+const SectionNavBtn: React.FC<Props> = ({ item, currentView }) => {
+  const { label, path } = item;
+  return (
+    <Button
+      as={Link}
+      to={path}
+      variant={currentView === label ? 'solid' : 'ghost'}
+      colorScheme="blue"
+      size="sm"
+      mr="2"
+    >
+      {label}
+    </Button>
+  );
+};
+
+export default SectionNavBtn;

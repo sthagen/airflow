@@ -18,12 +18,14 @@
  */
 
 import React from 'react';
-import { Center, Heading } from '@chakra-ui/react';
+import { Heading } from '@chakra-ui/react';
 
-const Pipeline: React.FC = () => (
-  <Center height="100vh">
-    <Heading>Pipeline</Heading>
-  </Center>
+import ConfigContainer from './ConfigContainer';
+
+const Variables: React.FC = () => (
+  <ConfigContainer current="Variables">
+    <Heading>Variables</Heading>
+  </ConfigContainer>
 );
 
-export default Pipeline;
+export default Variables;

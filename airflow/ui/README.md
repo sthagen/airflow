@@ -26,6 +26,7 @@
 - [Neutrino](https://neutrinojs.org/) - lets you build web and Node.js applications with shared presets or configurations.
 - [Chakra UI](https://chakra-ui.com/) - a simple, modular and accessible component library that gives you all the building blocks you need to build your React applications.
 - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) - write tests that focus on functionality instead of implementation
+- [React Query](https://react-query.tanstack.com/) - powerful async data handler. all API calls go through this
 
 ## Environment variables
 
@@ -37,10 +38,10 @@ Be sure to allow CORS headers and set up an auth backend on your Airflow instanc
 export AIRFLOW__API__AUTH_BACKEND=airflow.api.auth.backend.basic_auth
 export AIRFLOW__API__ACCESS_CONTROL_ALLOW_HEADERS=*
 export AIRFLOW__API__ACCESS_CONTROL_ALLOW_METHODS=*
-export AIRFLOW__API__ACCESS_CONTROL_ALLOW_ORIGIN=http://127.0.0.1:28080/
+export AIRFLOW__API__ACCESS_CONTROL_ALLOW_ORIGIN=http://127.0.0.1:28080
 ```
 
-Create your local environment and adjust the `API_URL` if needed.
+Create your local environment and adjust the `WEBSERVER_URL` if needed.
 
 ```bash
 cp .env.example .env

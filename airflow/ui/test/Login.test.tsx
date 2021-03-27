@@ -32,11 +32,18 @@ import { url, defaultHeaders, QueryWrapper } from './utils';
 
 axios.defaults.adapter = require('axios/lib/adapters/http');
 
+nock(url)
+  .defaultReplyHeaders(defaultHeaders)
+  .persist()
+  .get('/version')
+  .reply(200, { version: '', gitVersion: '' });
+
 test('App shows Login screen by default', () => {
   const { getByText } = render(
     <BrowserRouter>
       <App />
     </BrowserRouter>,
+    { wrapper: QueryWrapper },
   );
 
   expect(getByText('Password')).toBeInTheDocument();
@@ -45,7 +52,10 @@ test('App shows Login screen by default', () => {
 describe('test login component', () => {
   test('Button is disabled when there is no username or password', () => {
     const { getByTestId } = render(
-      <Login />,
+      <BrowserRouter>
+        <Login />
+      </BrowserRouter>,
+      { wrapper: QueryWrapper },
     );
     const button = getByTestId('submit');
 
@@ -54,7 +64,10 @@ describe('test login component', () => {
 
   test('Button is clickable only when username and password exist', () => {
     const { getByTestId } = render(
-      <Login />,
+      <BrowserRouter>
+        <Login />
+      </BrowserRouter>,
+      { wrapper: QueryWrapper },
     );
 
     const button = getByTestId('submit');
@@ -69,7 +82,10 @@ describe('test login component', () => {
 
   test('Login page shows loading after submit', async () => {
     const { getByTestId, getByText } = render(
-      <Login />,
+      <BrowserRouter>
+        <Login />
+      </BrowserRouter>,
+      { wrapper: QueryWrapper },
     );
 
     const button = getByTestId('submit');
@@ -90,7 +106,11 @@ describe('test login component', () => {
       .replyWithError('Unauthorized');
 
     const { getByTestId, getByText } = render(
-      <AuthProvider><Login /></AuthProvider>,
+      <BrowserRouter>
+        <AuthProvider>
+          <Login />
+        </AuthProvider>
+      </BrowserRouter>,
       { wrapper: QueryWrapper },
     );
 
