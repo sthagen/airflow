@@ -195,7 +195,6 @@ def get_sphinx_theme_version() -> str:
 # Start dependencies group
 amazon = [
     'boto3>=1.15.0,<1.18.0',
-    'botocore>=1.18.0,<1.19.0',
     'watchtower~=0.7.3',
 ]
 apache_beam = [
@@ -469,6 +468,7 @@ zendesk = [
 # End dependencies group
 
 devel = [
+    'aws_xray_sdk',
     'beautifulsoup4~=4.7.1',
     'black',
     'blinker',
@@ -486,11 +486,9 @@ devel = [
     'ipdb',
     'jira',
     'jsonpath-ng',
-    # HACK: Moto is not compatible with newer versions
-    # See: https://github.com/spulec/moto/issues/3535
-    'mock<4.0.3',
+    'jsondiff',
     'mongomock',
-    'moto<2',
+    'moto~=2.0',
     'mypy==0.770',
     'parameterized',
     'paramiko',
@@ -504,6 +502,7 @@ devel = [
     'pytest-rerunfailures~=9.1',
     'pytest-timeouts',
     'pytest-xdist',
+    'python-jose',
     'pywinrm',
     'qds-sdk>=1.9.6',
     'requests_mock',
@@ -744,8 +743,11 @@ PACKAGES_EXCLUDED_FOR_ALL.extend(
 # This can be removed as soon as we get non-conflicting
 # requirements for the apache-beam as well.
 #
-# Currently Apache Beam has very narrow and old dependencies for 'dill' and 'mock' packages which
-# are required by our tests (but only for tests).
+# Currently Apache Beam has very narrow and old dependencies for 'mock' package which
+# are required only for our tests.
+# once https://github.com/apache/beam/pull/14328 is solved and new version of apache-beam is released
+# we will be able to remove this exclusion and get rid of `install_remaining_dependencies`
+# function in `scripts/in_container`.
 #
 PACKAGES_EXCLUDED_FOR_CI = [
     'apache-beam',
