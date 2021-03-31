@@ -502,7 +502,7 @@ ARG_DO_PICKLE = Arg(
 ARG_QUEUES = Arg(
     ("-q", "--queues"),
     help="Comma delimited list of queues to serve",
-    default=conf.get('celery', 'DEFAULT_QUEUE'),
+    default=conf.get('operators', 'DEFAULT_QUEUE'),
 )
 ARG_CONCURRENCY = Arg(
     ("-c", "--concurrency"),
@@ -518,6 +518,18 @@ ARG_UMASK = Arg(
     ("-u", "--umask"),
     help="Set the umask of celery worker in daemon mode",
     default=conf.get('celery', 'worker_umask'),
+)
+ARG_WITHOUT_MINGLE = Arg(
+    ("--without-mingle",),
+    default=False,
+    help="Don’t synchronize with other workers at start-up",
+    action="store_true",
+)
+ARG_WITHOUT_GOSSIP = Arg(
+    ("--without-gossip",),
+    default=False,
+    help="Don’t subscribe to other workers events",
+    action="store_true",
 )
 
 # flower
@@ -1326,6 +1338,8 @@ CELERY_COMMANDS = (
             ARG_LOG_FILE,
             ARG_AUTOSCALE,
             ARG_SKIP_SERVE_LOGS,
+            ARG_WITHOUT_MINGLE,
+            ARG_WITHOUT_GOSSIP,
         ),
     ),
     ActionCommand(

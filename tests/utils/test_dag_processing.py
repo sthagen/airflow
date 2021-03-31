@@ -18,6 +18,8 @@
 
 import multiprocessing
 import os
+import pathlib
+import random
 import sys
 import unittest
 from datetime import datetime, timedelta
@@ -42,13 +44,14 @@ from airflow.utils.dag_processing import (
     DagParsingSignal,
     DagParsingStat,
 )
+from airflow.utils.net import get_hostname
 from airflow.utils.session import create_session
 from airflow.utils.state import State
 from tests.core.test_logging_config import SETTINGS_FILE_VALID, settings_context
 from tests.test_utils.config import conf_vars
 from tests.test_utils.db import clear_db_dags, clear_db_runs, clear_db_serialized_dags
 
-TEST_DAG_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'dags')
+TEST_DAG_FOLDER = pathlib.Path(__file__).parent.parent / 'dags'
 
 DEFAULT_DATE = timezone.datetime(2016, 1, 1)
 
@@ -223,6 +226,101 @@ class TestDagFileProcessorManager(unittest.TestCase):
         manager.set_file_paths(['abc.txt'])
         assert manager._processors == {'abc.txt': mock_processor}
 
+    @conf_vars({("scheduler", "file_parsing_sort_mode"): "alphabetical"})
+    @mock.patch("zipfile.is_zipfile", return_value=True)
+    @mock.patch("airflow.utils.file.might_contain_dag", return_value=True)
+    @mock.patch("airflow.utils.file.find_path_from_directory", return_value=True)
+    @mock.patch("airflow.utils.file.os.path.isfile", return_value=True)
+    def test_file_paths_in_queue_sorted_alphabetically(
+        self, mock_isfile, mock_find_path, mock_might_contain_dag, mock_zipfile
+    ):
+        """Test dag files are sorted alphabetically"""
+        dag_files = ["file_3.py", "file_2.py", "file_4.py", "file_1.py"]
+        mock_find_path.return_value = dag_files
+
+        manager = DagFileProcessorManager(
+            dag_directory='directory',
+            max_runs=1,
+            processor_factory=MagicMock().return_value,
+            processor_timeout=timedelta.max,
+            signal_conn=MagicMock(),
+            dag_ids=[],
+            pickle_dags=False,
+            async_mode=True,
+        )
+
+        manager.set_file_paths(dag_files)
+        assert manager._file_path_queue == []
+        manager.prepare_file_path_queue()
+        assert manager._file_path_queue == ['file_1.py', 'file_2.py', 'file_3.py', 'file_4.py']
+
+    @conf_vars({("scheduler", "file_parsing_sort_mode"): "random_seeded_by_host"})
+    @mock.patch("zipfile.is_zipfile", return_value=True)
+    @mock.patch("airflow.utils.file.might_contain_dag", return_value=True)
+    @mock.patch("airflow.utils.file.find_path_from_directory", return_value=True)
+    @mock.patch("airflow.utils.file.os.path.isfile", return_value=True)
+    def test_file_paths_in_queue_sorted_random_seeded_by_host(
+        self, mock_isfile, mock_find_path, mock_might_contain_dag, mock_zipfile
+    ):
+        """Test files are randomly sorted and seeded by host name"""
+        dag_files = ["file_3.py", "file_2.py", "file_4.py", "file_1.py"]
+        mock_find_path.return_value = dag_files
+
+        manager = DagFileProcessorManager(
+            dag_directory='directory',
+            max_runs=1,
+            processor_factory=MagicMock().return_value,
+            processor_timeout=timedelta.max,
+            signal_conn=MagicMock(),
+            dag_ids=[],
+            pickle_dags=False,
+            async_mode=True,
+        )
+
+        manager.set_file_paths(dag_files)
+        assert manager._file_path_queue == []
+        manager.prepare_file_path_queue()
+
+        expected_order = dag_files
+        random.Random(get_hostname()).shuffle(expected_order)
+        assert manager._file_path_queue == expected_order
+
+        # Verify running it again produces same order
+        manager._file_paths = []
+        manager.prepare_file_path_queue()
+        assert manager._file_path_queue == expected_order
+
+    @conf_vars({("scheduler", "file_parsing_sort_mode"): "modified_time"})
+    @mock.patch("zipfile.is_zipfile", return_value=True)
+    @mock.patch("airflow.utils.file.might_contain_dag", return_value=True)
+    @mock.patch("airflow.utils.file.find_path_from_directory", return_value=True)
+    @mock.patch("airflow.utils.file.os.path.isfile", return_value=True)
+    @mock.patch("airflow.utils.file.os.path.getmtime")
+    def test_file_paths_in_queue_sorted_by_modified_time(
+        self, mock_getmtime, mock_isfile, mock_find_path, mock_might_contain_dag, mock_zipfile
+    ):
+        """Test files are sorted by modified time"""
+        paths_with_mtime = {"file_3.py": 3.0, "file_2.py": 2.0, "file_4.py": 5.0, "file_1.py": 4.0}
+        dag_files = list(paths_with_mtime.keys())
+        mock_getmtime.side_effect = list(paths_with_mtime.values())
+        mock_find_path.return_value = dag_files
+
+        manager = DagFileProcessorManager(
+            dag_directory='directory',
+            max_runs=1,
+            processor_factory=MagicMock().return_value,
+            processor_timeout=timedelta.max,
+            signal_conn=MagicMock(),
+            dag_ids=[],
+            pickle_dags=False,
+            async_mode=True,
+        )
+
+        manager.set_file_paths(dag_files)
+        assert manager._file_path_queue == []
+        manager.prepare_file_path_queue()
+        assert manager._file_path_queue == ['file_4.py', 'file_1.py', 'file_3.py', 'file_2.py']
+
     def test_find_zombies(self):
         manager = DagFileProcessorManager(
             dag_directory='directory',
@@ -275,7 +373,7 @@ class TestDagFileProcessorManager(unittest.TestCase):
         Check that the same set of failure callback with zombies are passed to the dag
         file processors until the next zombie detection logic is invoked.
         """
-        test_dag_path = os.path.join(TEST_DAG_FOLDER, 'test_example_bash_operator.py')
+        test_dag_path = TEST_DAG_FOLDER / 'test_example_bash_operator.py'
         with conf_vars({('scheduler', 'parsing_processes'): '1', ('core', 'load_examples'): 'False'}):
             dagbag = DagBag(test_dag_path, read_dags_from_db=False)
             with create_session() as session:
@@ -304,7 +402,7 @@ class TestDagFileProcessorManager(unittest.TestCase):
                     )
                 ]
 
-            test_dag_path = os.path.join(TEST_DAG_FOLDER, 'test_example_bash_operator.py')
+            test_dag_path = TEST_DAG_FOLDER / 'test_example_bash_operator.py'
 
             child_pipe, parent_pipe = multiprocessing.Pipe()
             async_mode = 'sqlite' not in conf.get('core', 'sql_alchemy_conn')
@@ -333,12 +431,12 @@ class TestDagFileProcessorManager(unittest.TestCase):
             if async_mode:
                 # Once for initial parse, and then again for the add_callback_to_queue
                 assert len(fake_processors) == 2
-                assert fake_processors[0]._file_path == test_dag_path
+                assert fake_processors[0]._file_path == str(test_dag_path)
                 assert fake_processors[0]._callback_requests == []
             else:
                 assert len(fake_processors) == 1
 
-            assert fake_processors[-1]._file_path == test_dag_path
+            assert fake_processors[-1]._file_path == str(test_dag_path)
             callback_requests = fake_processors[-1]._callback_requests
             assert {zombie.simple_task_instance.key for zombie in expected_failure_callback_requests} == {
                 result.simple_task_instance.key for result in callback_requests
@@ -402,7 +500,7 @@ class TestDagFileProcessorManager(unittest.TestCase):
         from airflow.jobs.scheduler_job import SchedulerJob
 
         dag_id = 'exit_test_dag'
-        dag_directory = os.path.normpath(os.path.join(TEST_DAG_FOLDER, os.pardir, "dags_with_system_exit"))
+        dag_directory = TEST_DAG_FOLDER.parent / 'dags_with_system_exit'
 
         # Delete the one valid DAG/SerializedDAG, and check that it gets re-created
         clear_db_dags()
@@ -464,7 +562,7 @@ class TestDagFileProcessorAgent(unittest.TestCase):
         with settings_context(SETTINGS_FILE_VALID):
             # Launch a process through DagFileProcessorAgent, which will try
             # reload the logging module.
-            test_dag_path = os.path.join(TEST_DAG_FOLDER, 'test_scheduler_dags.py')
+            test_dag_path = TEST_DAG_FOLDER / 'test_scheduler_dags.py'
             async_mode = 'sqlite' not in conf.get('core', 'sql_alchemy_conn')
             log_file_loc = conf.get('logging', 'DAG_PROCESSOR_MANAGER_LOG_LOCATION')
 
@@ -492,7 +590,7 @@ class TestDagFileProcessorAgent(unittest.TestCase):
         clear_db_serialized_dags()
         clear_db_dags()
 
-        test_dag_path = os.path.join(TEST_DAG_FOLDER, 'test_scheduler_dags.py')
+        test_dag_path = TEST_DAG_FOLDER / 'test_scheduler_dags.py'
         async_mode = 'sqlite' not in conf.get('core', 'sql_alchemy_conn')
         processor_agent = DagFileProcessorAgent(
             test_dag_path, 1, type(self)._processor_factory, timedelta.max, [], False, async_mode
@@ -516,7 +614,7 @@ class TestDagFileProcessorAgent(unittest.TestCase):
             assert dag_ids == [('test_start_date_scheduling',), ('test_task_start_date_scheduling',)]
 
     def test_launch_process(self):
-        test_dag_path = os.path.join(TEST_DAG_FOLDER, 'test_scheduler_dags.py')
+        test_dag_path = TEST_DAG_FOLDER / 'test_scheduler_dags.py'
         async_mode = 'sqlite' not in conf.get('core', 'sql_alchemy_conn')
 
         log_file_loc = conf.get('logging', 'DAG_PROCESSOR_MANAGER_LOG_LOCATION')

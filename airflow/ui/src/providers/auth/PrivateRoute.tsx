@@ -17,27 +17,19 @@
  * under the License.
  */
 
-import {
-  createContext, useContext,
+import React, {
+  FC,
 } from 'react';
+import { Route, RouteProps } from 'react-router-dom';
 
-// todo: eventually replace hasValidAuthToken with a user object
-interface AuthContextData {
-  hasValidAuthToken: boolean;
-  login: (username: string, password: string) => void;
-  logout: () => void;
-  loading: boolean;
-  error: Error | null;
-}
+import Login from 'views/Login';
+// TimezoneProvider has to be used after authentication
+import TimezoneProvider from 'providers/TimezoneProvider';
+import { useAuthContext } from './context';
 
-export const authContextDefaultValue: AuthContextData = {
-  hasValidAuthToken: false,
-  login: () => null,
-  logout: () => null,
-  loading: true,
-  error: null,
+const PrivateRoute: FC<RouteProps> = (props) => {
+  const { hasValidAuthToken } = useAuthContext();
+  return hasValidAuthToken ? <TimezoneProvider><Route {...props} /></TimezoneProvider> : <Login />;
 };
 
-export const AuthContext = createContext<AuthContextData>(authContextDefaultValue);
-
-export const useAuthContext = () => useContext(AuthContext);
+export default PrivateRoute;

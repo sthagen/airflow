@@ -17,17 +17,13 @@
  * under the License.
  */
 
-import React, {
-  FC,
-} from 'react';
-import { Route, RouteProps } from 'react-router-dom';
+import type { PropsWithChildren } from 'react';
 
-import Login from 'views/Login';
-import { useAuthContext } from './context';
+const compareObjectProps = (
+  prevProps: PropsWithChildren<any>,
+  nextProps: PropsWithChildren<any>,
+) => (
+  JSON.stringify(prevProps) === JSON.stringify(nextProps)
+);
 
-const PrivateRoute: FC<RouteProps> = (props) => {
-  const { hasValidAuthToken } = useAuthContext();
-  return hasValidAuthToken ? <Route {...props} /> : <Login />;
-};
-
-export default PrivateRoute;
+export default compareObjectProps;

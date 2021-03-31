@@ -34,3 +34,10 @@ export interface DagRunsResponse extends Entries {
 export interface TaskInstancesResponse extends Entries {
   taskInstances: TaskInstance[];
 }
+
+export interface TriggerRunRequest {
+  conf: Record<string, any>;
+  dagRunId?: string;
+  executionDate: Date;
+  state?: 'success' | 'running' | 'failed';
+}
