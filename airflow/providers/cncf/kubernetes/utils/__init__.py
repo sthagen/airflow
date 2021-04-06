@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,19 +14,3 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-if [[ $1 == "" ]]; then
-  >&2 echo "Requires python MAJOR/MINOR version as first parameter"
-  exit 1
-fi
-
-export PYTHON_MAJOR_MINOR_VERSION=$1
-shift
-
-# shellcheck source=scripts/ci/libraries/_script_init.sh
-. "$( dirname "${BASH_SOURCE[0]}" )/../libraries/_script_init.sh"
-
-build_images::prepare_ci_build
-
-build_images::rebuild_ci_image_if_needed_with_group
-
-runs::run_generate_constraints
