@@ -117,7 +117,9 @@ jobs:
             "zhongjiajie",
             "ephraimbuddy",
             "jhtimmins",
-            "dstandish"
+            "dstandish",
+            "xinbinhuang",
+            "yuqian"
           ]'), github.actor)
         ) && github.repository == 'apache/airflow'
       ) && 'self-hosted' || 'ubuntu-20.04' }}
@@ -505,7 +507,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         if: >
           github.ref == 'refs/heads/master' && github.repository == 'apache/airflow' &&
           github.event_name == 'push'
-        run: aws s3 sync --delete ./docs/_build s3://apache-airflow-docs
+        run: aws s3 sync --delete ./files/documentation s3://apache-airflow-docs
 
   prepare-test-provider-packages-wheel:
     timeout-minutes: 40
@@ -1155,6 +1157,7 @@ ${{ hashFiles('.pre-commit-config.yaml') }}"
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+          submodules: recursive
       - name: "Setup python"
         uses: actions/setup-python@v2
         with:
