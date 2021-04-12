@@ -15,22 +15,32 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""This module is deprecated. Please use :mod:`airflow.providers.amazon.aws.hooks.sagemaker`."""
 
-import warnings
+"""add description field to variable
 
-# pylint: disable=unused-import
-from airflow.providers.amazon.aws.hooks.sagemaker import (  # noqa
-    LogState,
-    Position,
-    SageMakerHook,
-    argmin,
-    secondary_training_status_changed,
-    secondary_training_status_message,
-)
+Revision ID: e165e7455d70
+Revises: 90d1635d7b86
+Create Date: 2021-04-11 22:28:02.107290
 
-warnings.warn(
-    "This module is deprecated. Please use `airflow.providers.amazon.aws.hooks.sagemaker`.",
-    DeprecationWarning,
-    stacklevel=2,
-)
+"""
+
+import sqlalchemy as sa
+from alembic import op
+
+# revision identifiers, used by Alembic.
+revision = 'e165e7455d70'
+down_revision = '90d1635d7b86'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    """Apply add description field to variable"""
+    with op.batch_alter_table('variable', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('description', sa.Text(), nullable=True))
+
+
+def downgrade():
+    """Unapply add description field to variable"""
+    with op.batch_alter_table('variable', schema=None) as batch_op:
+        batch_op.drop_column('description')
