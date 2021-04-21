@@ -258,10 +258,25 @@ You should set up the autocomplete option automatically by running:
 
 You get the auto-completion working when you re-enter the shell.
 
+Customize your environment
+--------------------------
 When you enter the Breeze environment, automatically an environment file is sourced from
 ``files/airflow-breeze-config/variables.env``. The ``files`` folder from your local sources is
 automatically mounted to the container under ``/files`` path and you can put there any files you want
 to make available for the Breeze container.
+
+You can also add your local tmux configuration in ``files/airflow-breeze-config/.tmux.conf`` and
+these configurations will be available for your tmux environment.
+
+there is a symlink between ``files/airflow-breeze-config/.tmux.conf`` and ``~/.tmux.conf`` in the container,
+so you can change it at any place, and run
+
+.. code-block:: bash
+
+  tmux source ~/.tmux.conf
+
+inside container, to enable modified tmux configurations.
+
 
 .. raw:: html
 
@@ -1314,7 +1329,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
   -a, --install-airflow-version INSTALL_AIRFLOW_VERSION
           Uses differen version of Airflow when building PROD image.
 
-                 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist
+                 2.0.2 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist
 
   -t, --install-airflow-reference INSTALL_AIRFLOW_REFERENCE
           Installs Airflow directly from reference in GitHub when building PROD image.
@@ -1827,7 +1842,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
           airflow is just removed. In this case airflow package should be added to dist folder
           and --use-packages-from-dist flag should be used.
 
-                 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist none
+                 2.0.2 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist none
 
   --use-packages-from-dist
           In CI image, if specified it will look for packages placed in dist folder and
@@ -2529,7 +2544,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
   -a, --install-airflow-version INSTALL_AIRFLOW_VERSION
           Uses differen version of Airflow when building PROD image.
 
-                 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist
+                 2.0.2 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist
 
   -t, --install-airflow-reference INSTALL_AIRFLOW_REFERENCE
           Installs Airflow directly from reference in GitHub when building PROD image.
@@ -2557,7 +2572,7 @@ This is the current syntax for  `./breeze <./breeze>`_:
           airflow is just removed. In this case airflow package should be added to dist folder
           and --use-packages-from-dist flag should be used.
 
-                 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist none
+                 2.0.2 2.0.1 2.0.0 1.10.15 1.10.14 wheel sdist none
 
   --use-packages-from-dist
           In CI image, if specified it will look for packages placed in dist folder and

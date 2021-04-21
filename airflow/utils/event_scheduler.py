@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,17 +16,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This is an example docker build script. It is not intended for PRODUCTION use
-set -euo pipefail
-AIRFLOW_SOURCES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../" && pwd)"
-cd "${AIRFLOW_SOURCES}"
+from sched import scheduler
+from typing import Callable
 
-# [START build]
-docker build . \
-    --build-arg PYTHON_BASE_IMAGE="python:3.8-slim-buster" \
-    --build-arg AIRFLOW_VERSION="2.0.2" \
-    --build-arg ADDITIONAL_AIRFLOW_EXTRAS="mssql,hdfs" \
-    --build-arg ADDITIONAL_PYTHON_DEPS="oauth2client" \
-    --tag "$(basename "$0")"
-# [END build]
-docker rmi --force "$(basename "$0")"
+
+class EventScheduler(scheduler):
+    """General purpose event scheduler"""
+
+    def call_regular_interval(
+        self,
+        delay: float,
+        action: Callable,
+        arguments=(),
+        kwargs={},
+    ):  # pylint: disable=dangerous-default-value
+        """Helper to call a function at (roughly) a given interval"""
+
+        def repeat(*args, **kwargs):
+            action(*args, **kwargs)
+            # This is not perfect. If we want a timer every 60s, but action
+            # takes 10s to run, this will run it every 70s.
+            # Good enough for now
+            self.enter(delay, 1, repeat, args, kwargs)
+
+        self.enter(delay, 1, repeat, arguments, kwargs)

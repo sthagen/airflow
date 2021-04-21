@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,17 +16,25 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This is an example docker build script. It is not intended for PRODUCTION use
-set -euo pipefail
-AIRFLOW_SOURCES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../" && pwd)"
-cd "${AIRFLOW_SOURCES}"
+import unittest
+from unittest import mock
 
-# [START build]
-docker build . \
-    --build-arg PYTHON_BASE_IMAGE="python:3.8-slim-buster" \
-    --build-arg AIRFLOW_VERSION="2.0.2" \
-    --build-arg ADDITIONAL_AIRFLOW_EXTRAS="mssql,hdfs" \
-    --build-arg ADDITIONAL_PYTHON_DEPS="oauth2client" \
-    --tag "$(basename "$0")"
-# [END build]
-docker rmi --force "$(basename "$0")"
+from airflow.utils.event_scheduler import EventScheduler
+
+
+class TestEventScheduler(unittest.TestCase):
+    def test_call_regular_interval(self):
+        somefunction = mock.MagicMock()
+
+        timers = EventScheduler()
+        timers.call_regular_interval(30, somefunction)
+        assert len(timers.queue) == 1
+        somefunction.assert_not_called()
+
+        # Fake a run (it won't actually pop from the queue):
+        timers.queue[0].action()
+
+        # Make sure it added another event to the queue
+        assert len(timers.queue) == 2
+        somefunction.assert_called_once()
+        assert timers.queue[0].time < timers.queue[1].time
