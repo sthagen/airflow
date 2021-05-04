@@ -15,24 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
-################################
-## Airflow Worker ServiceAccount
-#################################
-{{- if and .Values.workers.serviceAccount.create (or (eq .Values.executor "CeleryExecutor") (eq .Values.executor "CeleryKubernetesExecutor") (eq .Values.executor "KubernetesExecutor")) }}
-kind: ServiceAccount
-apiVersion: v1
-metadata:
-  name: {{ include "worker.serviceAccountName" . }}
-  labels:
-    tier: airflow
-    release: {{ .Release.Name }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    heritage: {{ .Release.Service }}
-    {{- with .Values.labels }}
-    {{ toYaml . | nindent 4 }}
-    {{- end }}
-  {{- with .Values.workers.serviceAccount.annotations}}
-  annotations:
-    {{ toYaml . | nindent 4 }}
-  {{- end }}
-{{- end }}
+import unittest
+
+import jmespath
+
+from chart.tests.helm_template_generator import render_chart
+
+
+class LimitRangesTest(unittest.TestCase):
+    def test_limit_ranges_template(self):
+        docs = render_chart(
+            values={"limits": [{"max": {"cpu": "500m"}, "min": {"min": "200m"}, "type": "Container"}]},
+            show_only=["templates/limitrange.yaml"],
+        )
+        assert "LimitRange" == jmespath.search("kind", docs[0])
+        assert "500m" == jmespath.search("spec.limits[0].max.cpu", docs[0])
+
+    def test_limit_ranges_are_not_added_by_default(self):
+        docs = render_chart(show_only=["templates/limitrange.yaml"])
+        assert docs == []
