@@ -53,6 +53,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import backref, joinedload, relationship
 from sqlalchemy.orm.session import Session
 
+import airflow.templates
 from airflow import settings, utils
 from airflow.configuration import conf
 from airflow.exceptions import AirflowException, DuplicateTaskIdFound, TaskNotFound
@@ -211,7 +212,7 @@ class DAG(LoggingMixin):
             )
 
         **See**: `Jinja Environment documentation
-        <https://jinja.palletsprojects.com/en/master/api/#jinja2.Environment>`_
+        <https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment>`_
 
     :type jinja_environment_kwargs: dict
     :param tags: List of tags to help filtering DAGS in the UI.
@@ -637,7 +638,7 @@ class DAG(LoggingMixin):
         using_end_date = end_date
 
         # dates for dag runs
-        using_start_date = using_start_date or min([t.start_date for t in self.tasks])
+        using_start_date = using_start_date or min(t.start_date for t in self.tasks)
         using_end_date = using_end_date or timezone.utcnow()
 
         # next run date for a subdag isn't relevant (schedule_interval for subdags
@@ -997,7 +998,7 @@ class DAG(LoggingMixin):
         if self.render_template_as_native_obj:
             env = NativeEnvironment(**jinja_env_options)
         else:
-            env = jinja2.Environment(**jinja_env_options)  # type: ignore
+            env = airflow.templates.SandboxedEnvironment(**jinja_env_options)  # type: ignore
 
         # Add any user defined items. Safe to edit globals as long as no templates are rendered yet.
         # http://jinja.pocoo.org/docs/2.10/api/#jinja2.Environment.globals
@@ -1328,7 +1329,7 @@ class DAG(LoggingMixin):
         if count == 0:
             return 0
         if confirm_prompt:
-            ti_list = "\n".join([str(t) for t in tis])
+            ti_list = "\n".join(str(t) for t in tis)
             question = (
                 "You are about to delete these {count} tasks:\n{ti_list}\n\nAre you sure? (yes/no): "
             ).format(count=count, ti_list=ti_list)
@@ -1394,7 +1395,7 @@ class DAG(LoggingMixin):
             print("Nothing to clear.")
             return 0
         if confirm_prompt:
-            ti_list = "\n".join([str(t) for t in all_tis])
+            ti_list = "\n".join(str(t) for t in all_tis)
             question = f"You are about to delete these {count} tasks:\n{ti_list}\n\nAre you sure? (yes/no): "
             do_it = utils.helpers.ask_yesno(question)
 
@@ -1463,13 +1464,8 @@ class DAG(LoggingMixin):
         """
         # deep-copying self.task_dict and self._task_group takes a long time, and we don't want all
         # the tasks anyway, so we copy the tasks manually later
-        task_dict = self.task_dict
-        task_group = self._task_group
-        self.task_dict = {}
-        self._task_group = None  # type: ignore
-        dag = copy.deepcopy(self)
-        self.task_dict = task_dict
-        self._task_group = task_group
+        memo = {id(self.task_dict): None, id(self._task_group): None}
+        dag = copy.deepcopy(self, memo)  # type: ignore
 
         if isinstance(task_ids_or_regex, (str, RePatternType)):
             matched_tasks = [t for t in self.tasks if re.findall(task_ids_or_regex, t.task_id)]

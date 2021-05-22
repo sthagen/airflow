@@ -1421,7 +1421,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
         )
         failed_deps = list(ti.get_failed_dep_statuses(dep_context=dep_context))
         if failed_deps:
-            failed_deps_str = ", ".join([f"{dep.dep_name}: {dep.reason}" for dep in failed_deps])
+            failed_deps_str = ", ".join(f"{dep.dep_name}: {dep.reason}" for dep in failed_deps)
             flash(
                 "Could not queue task instance for execution, dependencies not met: "
                 "{}".format(failed_deps_str),
@@ -1570,7 +1570,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
             flash("No task instances to clear", 'error')
             response = redirect(origin)
         else:
-            details = "\n".join([str(t) for t in tis])
+            details = "\n".join(str(t) for t in tis)
 
             response = self.render_template(
                 'airflow/confirm.html',
@@ -1713,7 +1713,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
             return redirect(origin)
 
         else:
-            details = '\n'.join([str(t) for t in new_dag_state])
+            details = '\n'.join(str(t) for t in new_dag_state)
 
             response = self.render_template(
                 'airflow/confirm.html',
@@ -1742,7 +1742,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
             return redirect(origin)
 
         else:
-            details = '\n'.join([str(t) for t in new_dag_state])
+            details = '\n'.join(str(t) for t in new_dag_state)
 
             response = self.render_template(
                 'airflow/confirm.html',
@@ -1836,7 +1836,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
             commit=False,
         )
 
-        details = "\n".join([str(t) for t in to_be_altered])
+        details = "\n".join(str(t) for t in to_be_altered)
 
         response = self.render_template(
             "airflow/confirm.html",
@@ -2331,7 +2331,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
             )
 
         dates = sorted({ti.execution_date for ti in task_instances})
-        max_date = max([ti.execution_date for ti in task_instances]) if dates else None
+        max_date = max(ti.execution_date for ti in task_instances) if dates else None
 
         session.commit()
 
@@ -2406,7 +2406,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
 
         tis = dag.get_task_instances(start_date=min_date, end_date=base_date)
         tries = sorted({ti.try_number for ti in tis})
-        max_date = max([ti.execution_date for ti in tis]) if tries else None
+        max_date = max(ti.execution_date for ti in tis) if tries else None
         chart.create_y_axis('yAxis', format='.02f', custom_format=False, label='Tries')
         chart.axislist['yAxis']['axisLabelDistance'] = '-15'
 
@@ -2493,7 +2493,7 @@ class Airflow(AirflowBaseView):  # noqa: D101  pylint: disable=too-many-public-m
 
         tis = dag.get_task_instances(start_date=min_date, end_date=base_date)
         dates = sorted({ti.execution_date for ti in tis})
-        max_date = max([ti.execution_date for ti in tis]) if dates else None
+        max_date = max(ti.execution_date for ti in tis) if dates else None
 
         session.commit()
 
@@ -3942,7 +3942,7 @@ class DagModelView(AirflowModelView):
         query = unquote(request.args.get('query', ''))
 
         if not query:
-            wwwutils.json_response([])
+            return wwwutils.json_response([])
 
         # Provide suggestions of dag_ids and owners
         dag_ids_query = session.query(DagModel.dag_id.label('item')).filter(  # pylint: disable=no-member
@@ -4162,7 +4162,7 @@ class CustomUserDBModelView(UserDBModelView):
         """Returns appropriate permission name depending on request method name."""
         if request:
             action_name = request.view_args.get("name")
-            _, method_name = request.url_rule.endpoint.split(".")
+            _, method_name = request.url_rule.endpoint.rsplit(".", 1)
             if method_name == 'action' and action_name:
                 return self.class_permission_name_mapping.get(action_name, self._class_permission_name)
             if method_name:
@@ -4194,6 +4194,7 @@ class CustomUserStatsChartView(UserStatsChartView):
     route_base = "/userstatschartview"
     method_permission_name = {
         'chart': 'read',
+        'list': 'read',
     }
     base_permissions = [permissions.ACTION_CAN_READ]
 
@@ -4204,6 +4205,7 @@ class CustomUserLDAPModelView(UserLDAPModelView):
     class_permission_name = permissions.RESOURCE_MY_PROFILE
     method_permission_name = {
         'userinfo': 'read',
+        'list': 'read',
     }
     base_permissions = [
         permissions.ACTION_CAN_READ,
@@ -4216,6 +4218,7 @@ class CustomUserOAuthModelView(UserOAuthModelView):
     class_permission_name = permissions.RESOURCE_MY_PROFILE
     method_permission_name = {
         'userinfo': 'read',
+        'list': 'read',
     }
     base_permissions = [
         permissions.ACTION_CAN_READ,
@@ -4228,6 +4231,7 @@ class CustomUserOIDModelView(UserOIDModelView):
     class_permission_name = permissions.RESOURCE_MY_PROFILE
     method_permission_name = {
         'userinfo': 'read',
+        'list': 'read',
     }
     base_permissions = [
         permissions.ACTION_CAN_READ,
@@ -4240,6 +4244,7 @@ class CustomUserRemoteUserModelView(UserRemoteUserModelView):
     class_permission_name = permissions.RESOURCE_MY_PROFILE
     method_permission_name = {
         'userinfo': 'read',
+        'list': 'read',
     }
     base_permissions = [
         permissions.ACTION_CAN_READ,
