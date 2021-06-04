@@ -885,6 +885,7 @@ incompliancies
 infile
 infoType
 infoTypes
+ini
 init
 initcontainer
 initcontainers
@@ -1152,6 +1153,7 @@ pty
 pubsub
 py
 pyMongo
+pyarrow
 pydruid
 pyexasol
 pyhive

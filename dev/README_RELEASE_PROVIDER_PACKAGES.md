@@ -367,11 +367,11 @@ https://dist.apache.org/repos/dist/dev/airflow/providers/
  Python "wheel" release.
 
 The test procedure for PMC members who would like to test the RC candidates are described in
-https://github.com/apache/airflow/blob/master/dev/README_RELEASE_PROVIDER_PACKAGES.md#verify-the-release-by-pmc-members
+https://github.com/apache/airflow/blob/main/dev/README_RELEASE_PROVIDER_PACKAGES.md#verify-the-release-by-pmc-members
 
 and for Contributors:
 
-https://github.com/apache/airflow/blob/master/dev/README_RELEASE_PROVIDER_PACKAGES.md#verify-by-contributors
+https://github.com/apache/airflow/blob/main/dev/README_RELEASE_PROVIDER_PACKAGES.md#verify-by-contributors
 
 
 Public keys are available at:
@@ -601,14 +601,14 @@ USER ${AIRFLOW_UID}
 To build an image build and run a shell, run:
 
 ```shell script
-docker build . -t my-airflow
+docker build . --tag my-image:0.0.1
 docker run  -ti \
     --rm \
     -v "$PWD/data:/opt/airflow/" \
     -v "$PWD/keys/:/keys/" \
     -p 8080:8080 \
     -e AIRFLOW__CORE__LOAD_EXAMPLES=True \
-    my-airflow bash
+    my-image:0.0.1 bash
 ```
 
 ### Additional Verification
