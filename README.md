@@ -127,14 +127,14 @@ We **highly** recommend upgrading to the latest Airflow major release at the ear
 
 Apache Airflow is tested with:
 
-|                      | Main version (dev)        | Stable version (2.0.2)   | Previous version (1.10.15) |
-| -------------------- | ------------------------- | ------------------------ | -------------------------  |
-| Python               | 3.6, 3.7, 3.8             | 3.6, 3.7, 3.8            | 2.7, 3.5, 3.6, 3.7, 3.8    |
-| Kubernetes           | 1.20, 1.19, 1.18          | 1.20, 1.19, 1.18         | 1.18, 1.17, 1.16           |
-| PostgreSQL           | 9.6, 10, 11, 12, 13       | 9.6, 10, 11, 12, 13      | 9.6, 10, 11, 12, 13        |
-| MySQL                | 5.7, 8                    | 5.7, 8                   | 5.6, 5.7                   |
-| SQLite               | 3.15.0+                   | 3.15.0+                  | 3.15.0+                    |
-| MSSQL(Experimental)  | 2017,2019                 |                          |                            |
+|                      | Main version (dev)        | Stable version (2.0.2)   |
+| -------------------- | ------------------------- | ------------------------ |
+| Python               | 3.6, 3.7, 3.8             | 3.6, 3.7, 3.8            |
+| Kubernetes           | 1.20, 1.19, 1.18          | 1.20, 1.19, 1.18         |
+| PostgreSQL           | 9.6, 10, 11, 12, 13       | 9.6, 10, 11, 12, 13      |
+| MySQL                | 5.7, 8                    | 5.7, 8                   |
+| SQLite               | 3.15.0+                   | 3.15.0+                  |
+| MSSQL(Experimental)  | 2017,2019                 |                          |
 
 **Note:** MySQL 5.x versions are unable to or have limitations with
 running multiple schedulers -- please see the [Scheduler docs](https://airflow.apache.org/docs/apache-airflow/stable/scheduler.html).
@@ -183,7 +183,7 @@ through a more complete [tutorial](https://airflow.apache.org/docs/apache-airflo
 For more information on Airflow Improvement Proposals (AIPs), visit
 the [Airflow Wiki](https://cwiki.apache.org/confluence/display/AIRFLOW/Airflow+Improvements+Proposals).
 
-Official Docker (container) images for Apache Airflow are described in [IMAGES.rst](https://github.com/apache/airflow/blob/main/IMAGES.rst).
+Documentation for dependent projects like provider packages, Docker image, Helm Chart, you'll find it in [the documentation index](https://airflow.apache.org/docs/).
 
 ## Installing from PyPI
 
@@ -294,6 +294,8 @@ following the ASF Policy.
 ## Contributing
 
 Want to help build Apache Airflow? Check out our [contributing documentation](https://github.com/apache/airflow/blob/main/CONTRIBUTING.rst).
+
+Official Docker (container) images for Apache Airflow are described in [IMAGES.rst](https://github.com/apache/airflow/blob/main/IMAGES.rst).
 
 ## Who uses Apache Airflow?
 
